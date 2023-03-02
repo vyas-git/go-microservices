@@ -1,20 +1,25 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
+	"time"
+
+	"github.com/vyas-git/go-microservices/handlers"
 )
 
 func main() {
-	http.HandleFunc("/", func(rw http.ResponseWriter, rq *http.Request) {
-		d, err := ioutil.ReadAll(rq.Body)
-		if err != nil {
-			http.Error(rw, "Bad request", 400)
-			return
-		}
-		fmt.Fprintf(rw, "Hello %s", d)
-	})
-
-	http.ListenAndServe(":9090", nil)
+	l := log.New(os.Stdout, "Product api ", log.LstdFlags)
+	hh := handlers.NewHello(l)
+	sm := http.NewServeMux()
+	sm.Handle("/", hh)
+	server := &http.Server{
+		Addr:         ":9090",
+		Handler:      sm,
+		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  1 * time.Second,
+		WriteTimeout: 1 * time.Second,
+	}
+	server.ListenAndServe()
 }
