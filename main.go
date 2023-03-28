@@ -1,40 +1,22 @@
 package main
 
 import (
-	"context"
-	"log"
+	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"time"
 
-	"github.com/vyas-git/go-microservices/handlers"
+	"github.com/gorilla/mux"
 )
 
 func main() {
-	l := log.New(os.Stdout, "Product api ", log.LstdFlags)
-	hh := handlers.NewHello(l)
-	sm := http.NewServeMux()
-	sm.Handle("/", hh)
-	s := &http.Server{
-		Addr:         ":9090",
-		Handler:      sm,
-		IdleTimeout:  120 * time.Second,
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 1 * time.Second,
-	}
-	go func() {
-		err := s.ListenAndServe()
-		if err != nil {
-			l.Fatal(err)
-		}
-	}()
-	signChan := make(chan os.Signal)
-	signal.Notify(signChan, os.Interrupt)
-	signal.Notify(signChan, os.Kill)
+	r := mux.NewRouter()
 
-	sig := <-signChan
-	l.Println("Received terminate, graceful shutdown", sig)
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	s.Shutdown(ctx)
+	r.HandleFunc("/books/{title}/page/{page}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		title := vars["title"]
+		page := vars["page"]
+
+		fmt.Fprintf(w, "You've requested the book: %s on page %s\n", title, page)
+	})
+
+	http.ListenAndServe(":80", r)
 }
